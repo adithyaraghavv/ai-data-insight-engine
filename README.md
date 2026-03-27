@@ -3,9 +3,9 @@
 An intelligent data comparison system that analyzes two large datasets and automatically generates meaningful insights, visual charts, and natural language summaries — replacing fully manual analysis workflows.
 
 !Demo
-!demoimg1.png
-!demoimg2.png
-!demoimg3.png
+![Demo 1](demoimg1.png)
+! demoimg2.png
+! +demoimg3.png
 
 
 ---
