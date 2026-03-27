@@ -1,2 +1,2 @@
 # ai-data-insight-engine
-AI-Powered system to compare datasets and generate insights using NLP,LangChain and PyTorch
+AI-Powered tool that compares two large datasets and auto-generates insights,summaries and visual charts using LangChain and NLP 
