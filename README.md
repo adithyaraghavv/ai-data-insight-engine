@@ -4,8 +4,8 @@ An intelligent data comparison system that analyzes two large datasets and autom
 
 !Demo
 ![Demo 1](demoimg1.png)
-! demoimg2.png
-! +demoimg3.png
+![Demo 2](demoimg1.png)
+![Demo 3](demoimg1.png)
 
 
 ---
