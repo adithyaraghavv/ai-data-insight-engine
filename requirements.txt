@@ -1,0 +1,9 @@
+LangChain
+LangChain-community
+LangChain-groq
+LangChain-core
+torch
+pandas
+matplotlib
+fuzzywuzzy
+python
