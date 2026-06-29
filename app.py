@@ -456,30 +456,188 @@ def analyze_datasets(file1, file2, key_columns_raw=""):
 
 # ── Gradio UI ─────────────────────────────────────────────────────────────────
 
-with gr.Blocks(title="AI Data Insight Engine") as app:
-    gr.Markdown("""
-# AI-Powered Data Insight & Summary Engine
-Upload one or two CSV datasets to get AI-generated quality reports, comparisons, and visual charts.
-""")
+CSS = """
+/* ── Page background ── */
+body, .gradio-container {
+    background: #0f1117 !important;
+    font-family: 'Inter', 'Segoe UI', sans-serif !important;
+}
 
-    with gr.Row():
-        file1 = gr.File(label="Upload Dataset 1 (CSV)", file_types=[".csv"])
-        file2 = gr.File(label="Upload Dataset 2 (CSV) — optional", file_types=[".csv"])
+/* ── Hero header ── */
+#hero {
+    background: linear-gradient(135deg, #1a1f2e 0%, #16213e 50%, #0f3460 100%);
+    border: 1px solid #2a3550;
+    border-radius: 16px;
+    padding: 40px 32px 32px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+#hero h1 {
+    font-size: 2.2rem !important;
+    font-weight: 700 !important;
+    background: linear-gradient(90deg, #60a5fa, #a78bfa, #34d399);
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    margin-bottom: 10px !important;
+}
+#hero p {
+    color: #94a3b8 !important;
+    font-size: 1rem !important;
+}
+
+/* ── Upload card ── */
+#upload-row .block {
+    background: #1e2433 !important;
+    border: 1px solid #2a3550 !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+}
+#upload-row label {
+    color: #94a3b8 !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+}
+
+/* ── Key columns input ── */
+#key-cols textarea, #key-cols input {
+    background: #1e2433 !important;
+    border: 1px solid #2a3550 !important;
+    border-radius: 8px !important;
+    color: #e2e8f0 !important;
+}
+#key-cols label {
+    color: #94a3b8 !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+}
+
+/* ── Analyze button ── */
+#analyze-btn {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em !important;
+    color: white !important;
+    padding: 14px !important;
+    transition: opacity 0.2s !important;
+}
+#analyze-btn:hover { opacity: 0.88 !important; }
+
+/* ── Tabs ── */
+.tab-nav {
+    background: #1e2433 !important;
+    border-radius: 10px !important;
+    padding: 4px !important;
+    border: 1px solid #2a3550 !important;
+    margin-bottom: 16px !important;
+}
+.tab-nav button {
+    color: #64748b !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    border: none !important;
+    background: transparent !important;
+}
+.tab-nav button.selected {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    color: white !important;
+}
+
+/* ── Content panels ── */
+.tabitem, .tab-content {
+    background: #1e2433 !important;
+    border: 1px solid #2a3550 !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+}
+
+/* ── Markdown overview ── */
+.prose, .md {
+    color: #cbd5e1 !important;
+}
+.prose h2, .md h2 {
+    color: #60a5fa !important;
+    border-bottom: 1px solid #2a3550 !important;
+    padding-bottom: 8px !important;
+}
+.prose h3, .md h3 { color: #a78bfa !important; }
+.prose table { width: 100% !important; border-collapse: collapse !important; }
+.prose td, .prose th {
+    border: 1px solid #2a3550 !important;
+    padding: 10px 14px !important;
+    color: #cbd5e1 !important;
+}
+.prose th {
+    background: #0f3460 !important;
+    color: #93c5fd !important;
+    font-weight: 600 !important;
+}
+.prose tr:nth-child(even) td { background: #16213e !important; }
+
+/* ── AI Insights textbox ── */
+#ai-insights textarea {
+    background: #131929 !important;
+    border: 1px solid #2a3550 !important;
+    border-radius: 8px !important;
+    color: #cbd5e1 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.7 !important;
+}
+#ai-insights label { color: #60a5fa !important; font-weight: 600 !important; }
+
+/* ── Charts background ── */
+.plot-container, canvas {
+    background: #1e2433 !important;
+    border-radius: 10px !important;
+}
+
+/* ── Export file ── */
+#export-file .file-preview {
+    background: #131929 !important;
+    border: 1px solid #2a3550 !important;
+    border-radius: 8px !important;
+    color: #60a5fa !important;
+}
+"""
+
+with gr.Blocks(title="AI Data Insight Engine", css=CSS) as app:
+
+    gr.HTML("""
+    <div id="hero">
+        <h1>AI-Powered Data Insight Engine</h1>
+        <p>Upload one or two CSV datasets — get instant quality reports, AI summaries, charts & a PDF export</p>
+    </div>
+    """)
+
+    with gr.Row(elem_id="upload-row"):
+        file1 = gr.File(label="Dataset 1 (CSV)", file_types=[".csv"])
+        file2 = gr.File(label="Dataset 2 (CSV) — optional", file_types=[".csv"])
 
     key_cols_input = gr.Textbox(
         label="Key Columns (optional, comma-separated)",
-        placeholder="e.g. ID, CustomerName",
-        info="Used for deeper duplicate and uniqueness checks on specific columns.",
+        placeholder="e.g.  EmployeeID, Name",
+        info="Enables deeper duplicate and uniqueness checks on these columns.",
+        elem_id="key-cols",
     )
 
-    analyze_btn = gr.Button("Analyze", variant="primary", size="lg")
+    analyze_btn = gr.Button("⚡  Analyze", variant="primary", size="lg", elem_id="analyze-btn")
 
     with gr.Tabs():
-        with gr.Tab("Overview"):
+        with gr.Tab("📊  Overview"):
             overview_output = gr.Markdown()
-        with gr.Tab("AI Insights"):
-            summary_output = gr.Textbox(label="AI-Generated Insights", lines=18)
-        with gr.Tab("Charts"):
+        with gr.Tab("🤖  AI Insights"):
+            summary_output = gr.Textbox(
+                label="AI-Generated Insights",
+                lines=20,
+                elem_id="ai-insights",
+            )
+        with gr.Tab("📈  Charts"):
             with gr.Row():
                 chart1_output = gr.Plot()
                 chart2_output = gr.Plot()
@@ -489,8 +647,9 @@ Upload one or two CSV datasets to get AI-generated quality reports, comparisons,
             with gr.Row():
                 chart5_output = gr.Plot()
                 chart6_output = gr.Plot()
-        with gr.Tab("Export"):
-            pdf_download = gr.File(label="Download PDF Report")
+        with gr.Tab("📥  Export"):
+            gr.Markdown("### Download your full report as a PDF")
+            pdf_download = gr.File(label="PDF Report", elem_id="export-file")
 
     analyze_btn.click(
         fn=analyze_datasets,
@@ -505,4 +664,4 @@ Upload one or two CSV datasets to get AI-generated quality reports, comparisons,
 
 if __name__ == "__main__":
     share = os.environ.get("GRADIO_SHARE", "false").lower() == "true"
-    app.launch(share=share, theme=gr.themes.Soft())
+    app.launch(share=share)
