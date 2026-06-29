@@ -9,3 +9,4 @@ numpy
 fuzzywuzzy
 python-levenshtein
 python-dotenv
+reportlab

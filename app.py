@@ -1,5 +1,6 @@
 import os
 import io
+import tempfile
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -8,6 +9,12 @@ import gradio as gr
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, PageBreak
+from reportlab.lib.enums import TA_CENTER
 
 from src.data_quality import (
     ai_agent_data_quality,
@@ -24,20 +31,23 @@ def get_llm():
     return ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, api_key=api_key)
 
 
+def parse_key_columns(raw: str):
+    if not raw or not raw.strip():
+        return None
+    return [c.strip() for c in raw.split(",") if c.strip()]
+
+
 # ── Charts ────────────────────────────────────────────────────────────────────
 
 def chart_null_comparison(df1, df2):
-    """Grouped bar chart of null counts per common column."""
     cols = list(set(df1.columns) & set(df2.columns))
     nulls1 = [int(df1[c].isnull().sum()) for c in cols]
     nulls2 = [int(df2[c].isnull().sum()) for c in cols]
-
     if all(v == 0 for v in nulls1 + nulls2):
         return None
-
     x = range(len(cols))
-    fig, ax = plt.subplots(figsize=(max(8, len(cols) * 0.8), 4))
     w = 0.35
+    fig, ax = plt.subplots(figsize=(max(8, len(cols) * 0.8), 4))
     ax.bar([i - w / 2 for i in x], nulls1, w, label="Dataset 1", color="#2196F3")
     ax.bar([i + w / 2 for i in x], nulls2, w, label="Dataset 2", color="#4CAF50")
     ax.set_xticks(list(x))
@@ -50,10 +60,12 @@ def chart_null_comparison(df1, df2):
 
 
 def chart_boxplot(df1, df2, col1, col2):
-    """Side-by-side box plot for a matched numeric column pair."""
     fig, ax = plt.subplots(figsize=(6, 4))
-    data = [df1[col1].dropna().tolist(), df2[col2].dropna().tolist()]
-    bp = ax.boxplot(data, patch_artist=True, labels=["Dataset 1", "Dataset 2"])
+    bp = ax.boxplot(
+        [df1[col1].dropna().tolist(), df2[col2].dropna().tolist()],
+        patch_artist=True,
+        labels=["Dataset 1", "Dataset 2"],
+    )
     bp["boxes"][0].set_facecolor("#2196F3")
     bp["boxes"][1].set_facecolor("#4CAF50")
     ax.set_title(f"Distribution: {col1}")
@@ -63,7 +75,6 @@ def chart_boxplot(df1, df2, col1, col2):
 
 
 def chart_single_nulls(df):
-    """Horizontal bar chart of null counts for a single dataset."""
     null_counts = df.isnull().sum()
     null_counts = null_counts[null_counts > 0].sort_values()
     if null_counts.empty:
@@ -77,21 +88,23 @@ def chart_single_nulls(df):
 
 
 def chart_dtypes_pie(df):
-    """Pie chart of column data type breakdown."""
     type_counts = df.dtypes.apply(lambda x: x.kind).value_counts()
-    label_map = {"f": "Float", "i": "Integer", "O": "Object/String",
-                 "b": "Boolean", "M": "Datetime", "U": "Unicode"}
+    label_map = {
+        "f": "Float", "i": "Integer", "O": "Object/String",
+        "b": "Boolean", "M": "Datetime", "U": "Unicode",
+    }
     labels = [label_map.get(k, k) for k in type_counts.index]
     fig, ax = plt.subplots(figsize=(5, 4))
-    ax.pie(type_counts.values, labels=labels, autopct="%1.0f%%",
-           colors=["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"])
+    ax.pie(
+        type_counts.values, labels=labels, autopct="%1.0f%%",
+        colors=["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
+    )
     ax.set_title("Column Data Types")
     plt.tight_layout()
     return fig
 
 
 def chart_histogram(df, col):
-    """Histogram for a numeric column."""
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.hist(df[col].dropna(), bins=20, color="#7E57C2", edgecolor="white")
     ax.set_title(f"Distribution: {col}")
@@ -101,37 +114,165 @@ def chart_histogram(df, col):
     return fig
 
 
+def chart_correlation_heatmap(df, title="Correlation Heatmap"):
+    num_df = df.select_dtypes(include="number")
+    if num_df.shape[1] < 2:
+        return None
+    corr = num_df.corr()
+    size = max(5, corr.shape[1] * 0.8)
+    fig, ax = plt.subplots(figsize=(size, size * 0.85))
+    im = ax.imshow(corr.values, vmin=-1, vmax=1, cmap="coolwarm", aspect="auto")
+    plt.colorbar(im, ax=ax)
+    ax.set_xticks(range(len(corr.columns)))
+    ax.set_yticks(range(len(corr.columns)))
+    ax.set_xticklabels(corr.columns, rotation=45, ha="right", fontsize=8)
+    ax.set_yticklabels(corr.columns, fontsize=8)
+    for i in range(corr.shape[0]):
+        for j in range(corr.shape[1]):
+            val = corr.iloc[i, j]
+            ax.text(
+                j, i, f"{val:.2f}", ha="center", va="center",
+                fontsize=7, color="white" if abs(val) > 0.5 else "black",
+            )
+    ax.set_title(title)
+    plt.tight_layout()
+    return fig
+
+
+def chart_missing_heatmap(df, title="Missing Values Map (red = missing)", max_rows=100):
+    null_matrix = df.isnull()
+    if not null_matrix.any().any():
+        return None
+    sample = null_matrix.iloc[:max_rows]
+    fig, ax = plt.subplots(figsize=(max(6, sample.shape[1] * 0.5), max(3, min(6, sample.shape[0] * 0.06))))
+    ax.imshow(sample.values, aspect="auto", cmap="Reds", interpolation="none")
+    ax.set_xticks(range(len(sample.columns)))
+    ax.set_xticklabels(sample.columns, rotation=45, ha="right", fontsize=7)
+    ax.set_xlabel(f"Columns  (up to {max_rows} rows shown)")
+    ax.set_title(title)
+    plt.tight_layout()
+    return fig
+
+
 def generate_charts_two(df1, df2, matched_columns):
     charts = []
-
     null_chart = chart_null_comparison(df1, df2)
     if null_chart:
         charts.append(null_chart)
-
     numeric_matches = [
         (c1, c2) for c1, c2 in matched_columns.items()
         if pd.api.types.is_numeric_dtype(df1[c1]) and pd.api.types.is_numeric_dtype(df2[c2])
     ]
-    for col1, col2 in numeric_matches[:3]:
+    for col1, col2 in numeric_matches[:2]:
         charts.append(chart_boxplot(df1, df2, col1, col2))
-
+    corr1 = chart_correlation_heatmap(df1, "Correlation Heatmap — Dataset 1")
+    if corr1:
+        charts.append(corr1)
+    miss1 = chart_missing_heatmap(df1, "Missing Values — Dataset 1")
+    if miss1:
+        charts.append(miss1)
+    miss2 = chart_missing_heatmap(df2, "Missing Values — Dataset 2")
+    if miss2:
+        charts.append(miss2)
     return charts
 
 
 def generate_charts_single(df):
     charts = []
-
     null_chart = chart_single_nulls(df)
     if null_chart:
         charts.append(null_chart)
-
     charts.append(chart_dtypes_pie(df))
-
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     for col in numeric_cols[:2]:
         charts.append(chart_histogram(df, col))
-
+    corr = chart_correlation_heatmap(df)
+    if corr:
+        charts.append(corr)
+    miss = chart_missing_heatmap(df)
+    if miss:
+        charts.append(miss)
     return charts
+
+
+# ── PDF Export ────────────────────────────────────────────────────────────────
+
+def _fig_to_bytes(fig) -> io.BytesIO:
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=120, bbox_inches="tight")
+    buf.seek(0)
+    return buf
+
+
+def _md_to_plain(text: str) -> str:
+    import re
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"\*(.+?)\*", r"\1", text)
+    text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^\|.*\|$", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^[-|]+$", "", text, flags=re.MULTILINE)
+    text = re.sub(r"`(.+?)`", r"\1", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def generate_pdf(overview_md: str, summary_text: str, charts: list) -> str:
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    tmp.close()
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle("title", parent=styles["Title"], alignment=TA_CENTER, fontSize=18)
+    h1_style = ParagraphStyle("h1", parent=styles["Heading1"], fontSize=13, textColor=colors.HexColor("#1565C0"))
+    body_style = ParagraphStyle("body", parent=styles["Normal"], fontSize=9, leading=13)
+
+    doc = SimpleDocTemplate(tmp.name, pagesize=A4, rightMargin=20*mm, leftMargin=20*mm,
+                            topMargin=20*mm, bottomMargin=20*mm)
+    story = []
+
+    story.append(Paragraph("AI Data Insight Report", title_style))
+    story.append(Spacer(1, 6*mm))
+
+    story.append(Paragraph("Dataset Overview", h1_style))
+    story.append(Spacer(1, 2*mm))
+    for line in _md_to_plain(overview_md).splitlines():
+        line = line.strip()
+        if line:
+            story.append(Paragraph(line, body_style))
+    story.append(Spacer(1, 6*mm))
+
+    story.append(Paragraph("AI-Generated Insights", h1_style))
+    story.append(Spacer(1, 2*mm))
+    for line in summary_text.splitlines():
+        line = line.strip()
+        if line:
+            story.append(Paragraph(line, body_style))
+    story.append(Spacer(1, 6*mm))
+
+    visible_charts = [f for f in charts if f is not None]
+    if visible_charts:
+        story.append(PageBreak())
+        story.append(Paragraph("Visual Analysis", h1_style))
+        story.append(Spacer(1, 4*mm))
+        usable_w = A4[0] - 40*mm
+        img_w = (usable_w - 5*mm) / 2
+        row_buf = []
+        for fig in visible_charts:
+            buf = _fig_to_bytes(fig)
+            img = RLImage(buf, width=img_w, height=img_w * 0.65)
+            row_buf.append(img)
+            if len(row_buf) == 2:
+                from reportlab.platypus import Table
+                t = Table([row_buf], colWidths=[img_w, img_w])
+                story.append(t)
+                story.append(Spacer(1, 4*mm))
+                row_buf = []
+        if row_buf:
+            from reportlab.platypus import Table
+            t = Table([row_buf + [Spacer(img_w, img_w * 0.65)]], colWidths=[img_w, img_w])
+            story.append(t)
+
+    doc.build(story)
+    return tmp.name
 
 
 # ── AI Summary ────────────────────────────────────────────────────────────────
@@ -203,8 +344,7 @@ def build_overview_md(dq_report, matched_columns):
 
     if r2:
         rows = [
-            "## Dataset Overview",
-            "",
+            "## Dataset Overview", "",
             "| Metric | Dataset 1 | Dataset 2 |",
             "|--------|-----------|-----------|",
             f"| Rows | {r1['row_count']} | {r2['row_count']} |",
@@ -229,8 +369,7 @@ def build_overview_md(dq_report, matched_columns):
     else:
         null_cols = {k: v for k, v in r1["missing_values"].items() if v > 0}
         rows = [
-            "## Dataset Overview",
-            "",
+            "## Dataset Overview", "",
             f"| Rows | {r1['row_count']} |",
             "|------|------|",
             f"| Columns | {r1['column_count']} |",
@@ -278,15 +417,19 @@ def compute_stats(df1, df2, matched_columns):
 
 # ── Main Analysis ─────────────────────────────────────────────────────────────
 
-def analyze_datasets(file1, file2):
+ERROR_RETURN = ("", "", None, None, None, None, None, None, None)
+
+
+def analyze_datasets(file1, file2, key_columns_raw=""):
     if file1 is None:
-        return "Please upload at least one CSV file.", "", None, None, None, None
+        return ("Please upload at least one CSV file.",) + ("",) + (None,) * 7
 
     try:
         df1 = pd.read_csv(file1)
         df2 = pd.read_csv(file2) if file2 is not None else None
+        key_columns = parse_key_columns(key_columns_raw)
 
-        dq_report = ai_agent_data_quality(df1, df2)
+        dq_report = ai_agent_data_quality(df1, df2, key_columns=key_columns)
         matched_columns = fuzzy_match_columns(df1.columns, df2.columns) if df2 is not None else {}
         stats = compute_stats(df1, df2, matched_columns)
 
@@ -299,13 +442,15 @@ def analyze_datasets(file1, file2):
             else generate_charts_single(df1)
         )
 
-        padded = charts + [None] * (4 - len(charts))
-        return overview, summary, padded[0], padded[1], padded[2], padded[3]
+        pdf_path = generate_pdf(overview, summary, charts)
+
+        padded = charts + [None] * (6 - len(charts))
+        return overview, summary, pdf_path, padded[0], padded[1], padded[2], padded[3], padded[4], padded[5]
 
     except ValueError as e:
-        return f"Configuration error: {e}", "", None, None, None, None
+        return (f"Configuration error: {e}",) + ("",) + (None,) * 7
     except Exception as e:
-        return f"Error: {e}", "", None, None, None, None
+        return (f"Error: {e}",) + ("",) + (None,) * 7
 
 
 # ── Gradio UI ─────────────────────────────────────────────────────────────────
@@ -319,6 +464,12 @@ Upload one or two CSV datasets to get AI-generated quality reports, comparisons,
     with gr.Row():
         file1 = gr.File(label="Upload Dataset 1 (CSV)", file_types=[".csv"])
         file2 = gr.File(label="Upload Dataset 2 (CSV) — optional", file_types=[".csv"])
+
+    key_cols_input = gr.Textbox(
+        label="Key Columns (optional, comma-separated)",
+        placeholder="e.g. ID, CustomerName",
+        info="Used for deeper duplicate and uniqueness checks on specific columns.",
+    )
 
     analyze_btn = gr.Button("Analyze", variant="primary", size="lg")
 
@@ -334,14 +485,20 @@ Upload one or two CSV datasets to get AI-generated quality reports, comparisons,
             with gr.Row():
                 chart3_output = gr.Plot()
                 chart4_output = gr.Plot()
+            with gr.Row():
+                chart5_output = gr.Plot()
+                chart6_output = gr.Plot()
+        with gr.Tab("Export"):
+            pdf_download = gr.File(label="Download PDF Report")
 
     analyze_btn.click(
         fn=analyze_datasets,
-        inputs=[file1, file2],
+        inputs=[file1, file2, key_cols_input],
         outputs=[
-            overview_output, summary_output,
+            overview_output, summary_output, pdf_download,
             chart1_output, chart2_output,
             chart3_output, chart4_output,
+            chart5_output, chart6_output,
         ],
     )
 
