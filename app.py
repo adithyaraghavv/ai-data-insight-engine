@@ -455,7 +455,7 @@ def analyze_datasets(file1, file2, key_columns_raw=""):
 
 # ── Gradio UI ─────────────────────────────────────────────────────────────────
 
-with gr.Blocks(theme=gr.themes.Soft(), title="AI Data Insight Engine") as app:
+with gr.Blocks(title="AI Data Insight Engine") as app:
     gr.Markdown("""
 # AI-Powered Data Insight & Summary Engine
 Upload one or two CSV datasets to get AI-generated quality reports, comparisons, and visual charts.
@@ -477,7 +477,7 @@ Upload one or two CSV datasets to get AI-generated quality reports, comparisons,
         with gr.Tab("Overview"):
             overview_output = gr.Markdown()
         with gr.Tab("AI Insights"):
-            summary_output = gr.Textbox(label="AI-Generated Insights", lines=18, show_copy_button=True)
+            summary_output = gr.Textbox(label="AI-Generated Insights", lines=18)
         with gr.Tab("Charts"):
             with gr.Row():
                 chart1_output = gr.Plot()
@@ -504,4 +504,4 @@ Upload one or two CSV datasets to get AI-generated quality reports, comparisons,
 
 if __name__ == "__main__":
     share = os.environ.get("GRADIO_SHARE", "false").lower() == "true"
-    app.launch(share=share)
+    app.launch(share=share, theme=gr.themes.Soft())
