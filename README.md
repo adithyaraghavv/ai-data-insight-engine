@@ -28,9 +28,9 @@ This tool automates that entire workflow. Upload one or two CSVs, hit **Analyse*
 
 | AI Insights | Charts |
 |---|---|
-| ![AI Insights Tab](demoimg3.png) | ![Charts Tab](demoimg4.png) |
+| ![AI Insights Tab](demoimg3.png) | ![Charts Tab](demoimg4.png.png) |
 
-![Export Tab](demoimg5.png)
+![Export Tab](demoimg5.png.png)
 
 ---
 
