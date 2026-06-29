@@ -64,8 +64,9 @@ def chart_boxplot(df1, df2, col1, col2):
     bp = ax.boxplot(
         [df1[col1].dropna().tolist(), df2[col2].dropna().tolist()],
         patch_artist=True,
-        labels=["Dataset 1", "Dataset 2"],
     )
+    ax.set_xticks([1, 2])
+    ax.set_xticklabels(["Dataset 1", "Dataset 2"])
     bp["boxes"][0].set_facecolor("#2196F3")
     bp["boxes"][1].set_facecolor("#4CAF50")
     ax.set_title(f"Distribution: {col1}")
