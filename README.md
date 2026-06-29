@@ -2,7 +2,7 @@
 
 > Drop your CSV files. Get instant data quality reports, AI-generated insights, visual charts, and a downloadable PDF — no code required.
 
-![Hero](demoimg1.png)
+![Hero](demoimg1.png.png)
 
 ---
 
@@ -24,11 +24,11 @@ This tool automates that entire workflow. Upload one or two CSVs, hit **Analyse*
 
 | Upload & Hero | Dataset Overview |
 |---|---|
-| ![Hero & Upload](demoimg1.png) | ![Overview Tab](demoimg2.png) |
+| ![Hero & Upload](demoimg1.png.png) | ![Overview Tab](demoimg2.png.png) |
 
 | AI Insights | Charts |
 |---|---|
-| ![AI Insights Tab](demoimg3.png) | ![Charts Tab](demoimg4.png.png) |
+| ![AI Insights Tab](demoimg3.png.png) | ![Charts Tab](demoimg4.png.png) |
 
 ![Export Tab](demoimg5.png.png)
 
