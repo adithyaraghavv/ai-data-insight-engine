@@ -457,153 +457,275 @@ def analyze_datasets(file1, file2, key_columns_raw=""):
 # ── Gradio UI ─────────────────────────────────────────────────────────────────
 
 CSS = """
-/* ── Page background ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+}
+@keyframes gradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+    50%       { box-shadow: 0 0 24px 4px rgba(99,102,241,0.18); }
+}
+
+/* ── Base ── */
 body, .gradio-container {
-    background: #0f1117 !important;
+    background: #080c14 !important;
     font-family: 'Inter', 'Segoe UI', sans-serif !important;
-}
-
-/* ── Hero header ── */
-#hero {
-    background: linear-gradient(135deg, #1a1f2e 0%, #16213e 50%, #0f3460 100%);
-    border: 1px solid #2a3550;
-    border-radius: 16px;
-    padding: 40px 32px 32px;
-    margin-bottom: 24px;
-    text-align: center;
-}
-#hero h1 {
-    font-size: 2.2rem !important;
-    font-weight: 700 !important;
-    background: linear-gradient(90deg, #60a5fa, #a78bfa, #34d399);
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    margin-bottom: 10px !important;
-}
-#hero p {
-    color: #94a3b8 !important;
-    font-size: 1rem !important;
-}
-
-/* ── Upload card ── */
-#upload-row .block {
-    background: #1e2433 !important;
-    border: 1px solid #2a3550 !important;
-    border-radius: 12px !important;
-    padding: 8px !important;
-}
-#upload-row label {
-    color: #94a3b8 !important;
-    font-size: 0.8rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.05em !important;
-    text-transform: uppercase !important;
-}
-
-/* ── Key columns input ── */
-#key-cols textarea, #key-cols input {
-    background: #1e2433 !important;
-    border: 1px solid #2a3550 !important;
-    border-radius: 8px !important;
     color: #e2e8f0 !important;
 }
-#key-cols label {
-    color: #94a3b8 !important;
-    font-size: 0.8rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.05em !important;
+.gradio-container { max-width: 1200px !important; margin: 0 auto !important; padding: 24px !important; }
+
+/* ── Hero ── */
+#hero {
+    background: linear-gradient(135deg, #0d1626 0%, #111827 40%, #0f1f3d 100%);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 20px;
+    padding: 52px 32px 44px;
+    margin-bottom: 28px;
+    text-align: center;
+    animation: fadeUp 0.7s ease both;
+    position: relative;
+    overflow: hidden;
+}
+#hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%);
+    pointer-events: none;
+}
+#hero h1 {
+    font-size: 2.4rem !important;
+    font-weight: 700 !important;
+    background: linear-gradient(90deg, #60a5fa, #a78bfa, #34d399, #60a5fa);
+    background-size: 200% auto;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    animation: shimmer 4s linear infinite;
+    margin-bottom: 12px !important;
+    letter-spacing: -0.02em !important;
+}
+#hero p {
+    color: #64748b !important;
+    font-size: 1.05rem !important;
+    letter-spacing: 0.01em !important;
+}
+
+/* ── Section labels ── */
+.section-label {
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    color: #475569 !important;
+    margin-bottom: 10px !important;
+}
+
+/* ── Upload cards ── */
+#upload-row {
+    animation: fadeUp 0.7s ease 0.1s both;
+}
+#upload-row .block {
+    background: #0d1626 !important;
+    border: 1.5px dashed #1e2d4a !important;
+    border-radius: 14px !important;
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s !important;
+}
+#upload-row .block:hover {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12), 0 8px 32px rgba(0,0,0,0.3) !important;
+    transform: translateY(-2px) !important;
+}
+#upload-row label span {
+    color: #475569 !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
     text-transform: uppercase !important;
 }
+#upload-row .upload-text { color: #4b5563 !important; font-size: 0.9rem !important; }
+#upload-row svg { color: #374151 !important; }
+
+/* ── Key columns ── */
+#key-cols {
+    animation: fadeUp 0.7s ease 0.2s both;
+}
+#key-cols .block {
+    background: #0d1626 !important;
+    border: 1.5px solid #1e2d4a !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    transition: border-color 0.25s, box-shadow 0.25s !important;
+}
+#key-cols .block:focus-within {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12) !important;
+}
+#key-cols input, #key-cols textarea {
+    background: #080c14 !important;
+    border: 1px solid #1e2d4a !important;
+    border-radius: 8px !important;
+    color: #e2e8f0 !important;
+    font-size: 0.95rem !important;
+    transition: border-color 0.2s !important;
+}
+#key-cols input:focus { border-color: #6366f1 !important; outline: none !important; }
+#key-cols label span { color: #475569 !important; font-size: 0.72rem !important; font-weight: 700 !important; letter-spacing: 0.1em !important; text-transform: uppercase !important; }
+#key-cols .info { color: #374151 !important; font-size: 0.78rem !important; }
 
 /* ── Analyze button ── */
 #analyze-btn {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    animation: fadeUp 0.7s ease 0.3s both;
+}
+#analyze-btn button {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed, #4f46e5) !important;
+    background-size: 200% 200% !important;
     border: none !important;
-    border-radius: 10px !important;
+    border-radius: 12px !important;
     font-size: 1rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.05em !important;
+    letter-spacing: 0.06em !important;
     color: white !important;
-    padding: 14px !important;
-    transition: opacity 0.2s !important;
+    padding: 16px !important;
+    transition: transform 0.2s, box-shadow 0.2s, background-position 0.4s !important;
+    animation: gradientShift 3s ease infinite, fadeUp 0.7s ease 0.3s both !important;
+    box-shadow: 0 4px 20px rgba(79,70,229,0.35) !important;
 }
-#analyze-btn:hover { opacity: 0.88 !important; }
+#analyze-btn button:hover {
+    transform: translateY(-2px) scale(1.01) !important;
+    box-shadow: 0 8px 32px rgba(79,70,229,0.5) !important;
+}
+#analyze-btn button:active { transform: translateY(0) scale(0.99) !important; }
 
 /* ── Tabs ── */
+.tabs {
+    animation: fadeUp 0.7s ease 0.4s both;
+}
 .tab-nav {
-    background: #1e2433 !important;
-    border-radius: 10px !important;
-    padding: 4px !important;
-    border: 1px solid #2a3550 !important;
-    margin-bottom: 16px !important;
+    background: #0d1626 !important;
+    border-radius: 12px !important;
+    padding: 5px !important;
+    border: 1px solid #1e2d4a !important;
+    margin-bottom: 20px !important;
+    display: flex !important;
+    gap: 4px !important;
 }
 .tab-nav button {
-    color: #64748b !important;
+    color: #475569 !important;
     border-radius: 8px !important;
     font-weight: 500 !important;
+    font-size: 0.88rem !important;
     border: none !important;
     background: transparent !important;
+    padding: 8px 16px !important;
+    transition: color 0.2s, background 0.2s !important;
+}
+.tab-nav button:hover:not(.selected) {
+    color: #94a3b8 !important;
+    background: rgba(255,255,255,0.04) !important;
 }
 .tab-nav button.selected {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
     color: white !important;
+    box-shadow: 0 2px 12px rgba(79,70,229,0.35) !important;
 }
 
-/* ── Content panels ── */
-.tabitem, .tab-content {
-    background: #1e2433 !important;
-    border: 1px solid #2a3550 !important;
-    border-radius: 12px !important;
-    padding: 20px !important;
+/* ── Tab content panel ── */
+.tabitem {
+    background: #0d1626 !important;
+    border: 1px solid #1e2d4a !important;
+    border-radius: 14px !important;
+    padding: 28px !important;
 }
 
-/* ── Markdown overview ── */
-.prose, .md {
-    color: #cbd5e1 !important;
-}
+/* ── Markdown ── */
 .prose h2, .md h2 {
-    color: #60a5fa !important;
-    border-bottom: 1px solid #2a3550 !important;
-    padding-bottom: 8px !important;
+    color: #818cf8 !important;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    border-bottom: 1px solid #1e2d4a !important;
+    padding-bottom: 10px !important;
+    margin-top: 0 !important;
 }
-.prose h3, .md h3 { color: #a78bfa !important; }
-.prose table { width: 100% !important; border-collapse: collapse !important; }
-.prose td, .prose th {
-    border: 1px solid #2a3550 !important;
-    padding: 10px 14px !important;
-    color: #cbd5e1 !important;
-}
+.prose h3, .md h3 { color: #a78bfa !important; font-size: 0.95rem !important; font-weight: 600 !important; }
+.prose, .md { color: #94a3b8 !important; line-height: 1.75 !important; }
+.prose table { width: 100% !important; border-collapse: collapse !important; border-radius: 10px !important; overflow: hidden !important; }
 .prose th {
-    background: #0f3460 !important;
-    color: #93c5fd !important;
+    background: #111827 !important;
+    color: #818cf8 !important;
     font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid #1e2d4a !important;
 }
-.prose tr:nth-child(even) td { background: #16213e !important; }
+.prose td {
+    padding: 11px 16px !important;
+    border-bottom: 1px solid #111827 !important;
+    color: #cbd5e1 !important;
+    font-size: 0.92rem !important;
+}
+.prose tr:last-child td { border-bottom: none !important; }
+.prose tr:hover td { background: rgba(99,102,241,0.05) !important; }
+.prose code { background: #111827 !important; color: #a78bfa !important; border-radius: 4px !important; padding: 1px 6px !important; font-size: 0.85em !important; }
+.prose li { color: #94a3b8 !important; margin-bottom: 4px !important; }
+.prose strong { color: #e2e8f0 !important; }
 
 /* ── AI Insights textbox ── */
 #ai-insights textarea {
-    background: #131929 !important;
-    border: 1px solid #2a3550 !important;
-    border-radius: 8px !important;
-    color: #cbd5e1 !important;
-    font-size: 0.92rem !important;
-    line-height: 1.7 !important;
-}
-#ai-insights label { color: #60a5fa !important; font-weight: 600 !important; }
-
-/* ── Charts background ── */
-.plot-container, canvas {
-    background: #1e2433 !important;
+    background: #080c14 !important;
+    border: 1px solid #1e2d4a !important;
     border-radius: 10px !important;
+    color: #cbd5e1 !important;
+    font-size: 0.93rem !important;
+    line-height: 1.8 !important;
+    padding: 16px !important;
+}
+#ai-insights label span { color: #818cf8 !important; font-weight: 600 !important; font-size: 0.85rem !important; }
+
+/* ── Charts ── */
+.plot-container {
+    background: #080c14 !important;
+    border: 1px solid #1e2d4a !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    transition: box-shadow 0.25s, transform 0.2s !important;
+}
+.plot-container:hover {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4) !important;
+    transform: translateY(-2px) !important;
 }
 
-/* ── Export file ── */
-#export-file .file-preview {
-    background: #131929 !important;
-    border: 1px solid #2a3550 !important;
-    border-radius: 8px !important;
-    color: #60a5fa !important;
+/* ── Export tab ── */
+#export-section h3 { color: #818cf8 !important; font-weight: 600 !important; margin-bottom: 16px !important; }
+#export-file .file-preview, #export-file .download-link {
+    background: #080c14 !important;
+    border: 1px solid #1e2d4a !important;
+    border-radius: 10px !important;
+    color: #818cf8 !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
 }
+#export-file .file-preview:hover {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #080c14; }
+::-webkit-scrollbar-thumb { background: #1e2d4a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
 """
 
 with gr.Blocks(title="AI Data Insight Engine", css=CSS) as app:
@@ -611,7 +733,7 @@ with gr.Blocks(title="AI Data Insight Engine", css=CSS) as app:
     gr.HTML("""
     <div id="hero">
         <h1>AI-Powered Data Insight Engine</h1>
-        <p>Upload one or two CSV datasets — get instant quality reports, AI summaries, charts & a PDF export</p>
+        <p>Upload one or two CSV datasets — get instant quality reports, AI summaries, charts &amp; a PDF export</p>
     </div>
     """)
 
@@ -619,14 +741,15 @@ with gr.Blocks(title="AI Data Insight Engine", css=CSS) as app:
         file1 = gr.File(label="Dataset 1 (CSV)", file_types=[".csv"])
         file2 = gr.File(label="Dataset 2 (CSV) — optional", file_types=[".csv"])
 
-    key_cols_input = gr.Textbox(
-        label="Key Columns (optional, comma-separated)",
-        placeholder="e.g.  EmployeeID, Name",
-        info="Enables deeper duplicate and uniqueness checks on these columns.",
-        elem_id="key-cols",
-    )
+    with gr.Row(elem_id="key-cols"):
+        key_cols_input = gr.Textbox(
+            label="Key Columns (optional, comma-separated)",
+            placeholder="e.g.  EmployeeID, Name",
+            info="Enables deeper duplicate and uniqueness checks on these columns.",
+        )
 
-    analyze_btn = gr.Button("⚡  Analyze", variant="primary", size="lg", elem_id="analyze-btn")
+    with gr.Row(elem_id="analyze-btn"):
+        analyze_btn = gr.Button("⚡  Analyze", variant="primary", size="lg")
 
     with gr.Tabs():
         with gr.Tab("📊  Overview"):
@@ -648,7 +771,7 @@ with gr.Blocks(title="AI Data Insight Engine", css=CSS) as app:
                 chart5_output = gr.Plot()
                 chart6_output = gr.Plot()
         with gr.Tab("📥  Export"):
-            gr.Markdown("### Download your full report as a PDF")
+            gr.HTML('<div id="export-section"><h3>Download your full report as a PDF</h3></div>')
             pdf_download = gr.File(label="PDF Report", elem_id="export-file")
 
     analyze_btn.click(
