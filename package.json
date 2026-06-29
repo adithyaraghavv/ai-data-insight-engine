@@ -1,0 +1,9 @@
+{
+  "name": "ai-data-insight-engine",
+  "version": "1.0.0",
+  "description": "AI-Powered Data Insight & Summary Engine",
+  "scripts": {
+    "dev": "python app.py",
+    "install:deps": "pip install -r requirements.txt"
+  }
+}
