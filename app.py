@@ -612,32 +612,34 @@ body, .gradio-container {
     animation: fadeUp 0.7s ease 0.4s both;
 }
 .tab-nav {
-    background: #0d1626 !important;
-    border-radius: 12px !important;
-    padding: 5px !important;
-    border: 1px solid #1e2d4a !important;
+    background: #111827 !important;
+    border-radius: 14px !important;
+    padding: 6px !important;
+    border: 1px solid #2a3a5c !important;
     margin-bottom: 20px !important;
     display: flex !important;
     gap: 4px !important;
 }
 .tab-nav button {
-    color: #475569 !important;
-    border-radius: 8px !important;
-    font-weight: 500 !important;
-    font-size: 0.88rem !important;
+    color: #94a3b8 !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
     border: none !important;
     background: transparent !important;
-    padding: 8px 16px !important;
-    transition: color 0.2s, background 0.2s !important;
+    padding: 10px 22px !important;
+    transition: color 0.2s, background 0.2s, box-shadow 0.2s !important;
+    letter-spacing: 0.01em !important;
 }
 .tab-nav button:hover:not(.selected) {
-    color: #94a3b8 !important;
-    background: rgba(255,255,255,0.04) !important;
+    color: #e2e8f0 !important;
+    background: rgba(255,255,255,0.07) !important;
 }
 .tab-nav button.selected {
     background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
-    color: white !important;
-    box-shadow: 0 2px 12px rgba(79,70,229,0.35) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 16px rgba(79,70,229,0.45) !important;
 }
 
 /* ── Tab content panel ── */
